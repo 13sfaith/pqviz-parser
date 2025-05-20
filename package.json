@@ -6,6 +6,7 @@
     "test": "vitest",
     "build": "tsc"
   },
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -15,5 +16,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "vitest": "^3.1.4"
+  },
+  "dependencies": {
+    "flatted": "^3.3.3"
   }
 }
