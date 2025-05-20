@@ -1,0 +1,19 @@
+# Node dependencies
+node_modules/
+
+# Build output
+dist/
+
+# OS-specific
+.DS_Store
+
+# Logs (optional, but common)
+*.log
+
+# Env files (if you ever add them)
+.env
+.env.*
+
+# Vitest snapshot files (if you start using snapshot testing)
+__snapshots__/
+
