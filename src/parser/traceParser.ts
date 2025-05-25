@@ -1,6 +1,9 @@
 import path from 'path'
 import TraceType from '../types/TraceType.js';
 import CallTreeNode from '../types/CallTreeNode.js';
+import FunctionCall  from '../types/FunctionCall.js';
+import FunctionReturn from '../types/FunctionReturn.js';
+import FunctionStart from '../types/FunctionStart.js';
 
 var trace: Array<TraceType>;
 
@@ -91,38 +94,11 @@ function buildImportMap(): Array<importDefinition> {
     return imports
 }
 
-type functionCall = {
-    type: "functionCall",
-    from: string,
-    to: string,
-    callingFile: string,
-    callingLine: number,
-    args: Array<any>,
-    index: number
-}
-
-type functionReturn = {
-    type: "functionReturn",
-    from: string,
-    to: string,
-    callingFile: string,
-    callingLine: number,
-    index: number
-}
-
-type functionStart = {
-    type: "functionStart",
-    name: string,
-    file: string,
-    line: number
-    index: number
-}
-
-function isFunctionCall(x: any): x is functionCall {
+function isFunctionCall(x: any): x is FunctionCall {
     return x.type == "functionCall"
 }
 
-function isFunctionReturn(x: any): x is functionReturn {
+function isFunctionReturn(x: any): x is FunctionReturn {
     return x.type == "functionReturn"
 }
 
@@ -151,9 +127,9 @@ function buildCallTree(imports: Array<importDefinition>): CallTreeNode {
         currentNode = callNode
     }
 
-    let functionCalls: Array<functionCall> = trace.filter((a: TraceType) => a.type == 'functionCall') as Array<functionCall>
+    let functionCalls: Array<FunctionCall> = trace.filter((a: TraceType) => a.type == 'functionCall') as Array<FunctionCall>
     for (let i = 0; i < functionCalls.length; i++) {
-        let firstCall: functionCall = functionCalls[i]
+        let firstCall: FunctionCall = functionCalls[i]
         currentNode = findFirstCall(root, firstCall.from)
         if (currentNode.name == "") {
             console.error("unable to find find called node")
@@ -179,8 +155,8 @@ function populateCallTreeWithFunctionCalls(currentNode: CallTreeNode) {
         if (trace[i+1].type != 'functionStart') {
             continue
         }
-        let functionCall = trace[i] as functionCall
-        let functionStart = trace[i+1] as functionStart
+        let functionCall = trace[i] as FunctionCall
+        let functionStart = trace[i+1] as FunctionStart
 
         if (functionCall.to == functionStart.name) {
             continue;
@@ -189,7 +165,7 @@ function populateCallTreeWithFunctionCalls(currentNode: CallTreeNode) {
         let currentIndex = i
         for (; currentIndex < trace.length; currentIndex++) {
             if (isFunctionReturn(trace[currentIndex])) {
-                let returnNode = trace[currentIndex] as functionReturn
+                let returnNode = trace[currentIndex] as FunctionReturn
                 if (returnNode.from == functionCall.from && returnNode.to == functionCall.to && returnNode.callingLine == functionCall.callingLine) {
                     break
                 }
@@ -197,7 +173,7 @@ function populateCallTreeWithFunctionCalls(currentNode: CallTreeNode) {
             if (trace[currentIndex].type != 'functionCall') {
                 continue
             }
-            let currentNode = trace[currentIndex] as functionCall
+            let currentNode = trace[currentIndex] as FunctionCall
             if (currentNode.from != functionStart.name) {
                 continue
             }
@@ -205,13 +181,13 @@ function populateCallTreeWithFunctionCalls(currentNode: CallTreeNode) {
         }
     }
 
-    let functionCalls: Array<functionCall> = trace.filter((a) => a.type == 'functionCall') as Array<functionCall>
+    let functionCalls: Array<FunctionCall> = trace.filter((a) => a.type == 'functionCall') as Array<FunctionCall>
 
     for (let i = 0; i < functionCalls.length; i++) {
         if (!isFunctionCall(functionCalls[i])) {
             continue;
         }
-        let currentFunction = functionCalls[i] as functionCall
+        let currentFunction = functionCalls[i] as FunctionCall
 
         if (currentFunction.from != currentNode.name) {
             let searchResult: WalkUpResult = walkUpTreeTillNodeFound(currentNode, currentFunction.from)
@@ -234,18 +210,18 @@ function populateCallTreeWithFunctionCalls(currentNode: CallTreeNode) {
 }
 
 type CreateFunctionCallResult = 
-    | { success: true; functionCall: functionCall }
+    | { success: true; functionCall: FunctionCall }
     | { success: false }
 
 const CreateFunctionCallResult = {
-    found: (functionCall: functionCall): CreateFunctionCallResult => ({ success: true, functionCall }),
+    found: (functionCall: FunctionCall): CreateFunctionCallResult => ({ success: true, functionCall }),
     notFound: (): CreateFunctionCallResult => ({ success: false })
 }
 
-function createCorrectFunctionCall(functionCall: functionCall): CreateFunctionCallResult {
+function createCorrectFunctionCall(functionCall: FunctionCall): CreateFunctionCallResult {
     let currentIndex = functionCall.index
 
-    while (currentIndex > 0 && trace[currentIndex].type != 'functionReturn') {
+    while (currentIndex > 0 && trace[currentIndex].type != 'FunctionReturn') {
         currentIndex--;
     } 
     if (currentIndex < 0) {
@@ -263,7 +239,7 @@ function createCorrectFunctionCall(functionCall: functionCall): CreateFunctionCa
         if (trace[currentIndex].type == "functionCall") {
             callCount++
         }
-        if (trace[currentIndex].type == "functionReturn") {
+        if (trace[currentIndex].type == "FunctionReturn") {
             returnCount++
         }
     }
@@ -274,7 +250,7 @@ function createCorrectFunctionCall(functionCall: functionCall): CreateFunctionCa
     }
     currentIndex++
 
-    let referenceCall = trace[currentIndex] as functionCall
+    let referenceCall = trace[currentIndex] as FunctionCall
 
     let ret = {
         type: 'functionCall',
@@ -284,7 +260,7 @@ function createCorrectFunctionCall(functionCall: functionCall): CreateFunctionCa
         callingLine: referenceCall.callingLine,
         args: referenceCall.args,
         index: -1,
-    } as functionCall
+    } as FunctionCall
 
     return CreateFunctionCallResult.found(ret)
 }

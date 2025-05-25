@@ -8,4 +8,4 @@ const CallTreeNode = {
     new: (name: string, parent: CallTreeNode): CallTreeNode => ({ name, calls: [], parent })
 }
 
-export default CallTreeNode
+export default CallTreeNode 
